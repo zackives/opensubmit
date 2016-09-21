@@ -27,6 +27,7 @@ class TeacherDashboard(Dashboard):
         for course in courses:
             # Prepare course-related links
             links=[]
+            links.append(['Check user permissions','../admin/auth/user/', False])
             links.append(['Check all submissions',course.grading_url(), False])
             ass_url="%s?course__id__exact=%u"%(
                                 reverse('teacher:opensubmit_assignment_changelist'),

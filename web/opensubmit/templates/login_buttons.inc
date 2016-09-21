@@ -11,7 +11,7 @@
 <section>
     <div class="row">
             <div class="col-md-2">
-                Authentication with:
+                You can log in with your account from:
             </div>
             {% if login_google %}
                 <div class="col-md-2">
