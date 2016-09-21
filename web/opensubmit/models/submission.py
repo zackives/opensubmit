@@ -427,7 +427,7 @@ class Submission(models.Model):
 
         elif state == Submission.CLOSED:
             subject = 'Grading completed'
-            message = u'Hi,\n\nthis is a short automated notice that your submission for "%s" in "%s" was graded.\n\n Further information can be found at %s.\n\n'
+            message = u'Hi,\n\nthis is a short automated notice that your submission for "%s" in "%s" was graded.\n\n Please click on the assignment details at %s.\n\n'
             message = message % (self.assignment, self.assignment.course, settings.MAIN_URL)
         else:
             return
