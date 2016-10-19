@@ -40,7 +40,7 @@ class PendingStudentTestsManager(models.Manager):
         jobs = Submission.objects.filter(
             state__in=[ Submission.TEST_COMPILE_PENDING,
                         Submission.TEST_VALIDITY_PENDING]
-            ).order_by('state').order_by('-modified')
+            ).order_by('state').order_by('modified')
         return jobs
 
 class PendingFullTestsManager(models.Manager):
@@ -56,7 +56,7 @@ class PendingFullTestsManager(models.Manager):
         jobs = Submission.objects.filter(
             state__in=[ Submission.TEST_FULL_PENDING,
                         Submission.CLOSED_TEST_FULL_PENDING]
-            ).order_by('-state').order_by('-modified')
+            ).order_by('-state').order_by('modified')
         return jobs
 
 class PendingTestsManager(models.Manager):
@@ -69,7 +69,7 @@ class PendingTestsManager(models.Manager):
                         Submission.CLOSED_TEST_FULL_PENDING,    # CT
                         Submission.TEST_COMPILE_PENDING,        # PC
                         Submission.TEST_VALIDITY_PENDING ]      # PV
-            ).order_by('-state').order_by('-modified')
+            ).order_by('-state').order_by('modified')
         return jobs
 
 

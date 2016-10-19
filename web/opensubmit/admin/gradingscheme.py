@@ -10,7 +10,8 @@ def gradings(gradingScheme):
         TODO: Use nice little icons instead of (p) / (f) marking.
     '''
     result = []
-    for grading in gradingScheme.gradings.all():
+#    for grading in gradingScheme.gradings.all():
+    for grading in gradingScheme.gradings.order_by('title'):
         if grading.means_passed:
             result.append(unicode(grading) + u" (pass)")
         else:

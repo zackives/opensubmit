@@ -6,6 +6,7 @@ class Grading(models.Model):
 
     class Meta:
         app_label = 'opensubmit'
+        ordering = ['title']
 
     def __unicode__(self):
         return unicode(self.title)
