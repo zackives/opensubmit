@@ -277,6 +277,10 @@ def gradingtable(request, course_id):
                     gradings[author][assignment.pk] = submission.grading
     # prepare gradings per author + assignment for rendering
     resulttable = []
+    averages = []
+    averages.append('AVERAGE')
+    averages.append('STUDENT')
+    averages.append('-')
     for author, gradlist in gradings.iteritems():
         columns = []
         numpassed = 0
@@ -287,6 +291,7 @@ def gradingtable(request, course_id):
             columns.append(author.profile.student_id)
         else:
             columns.append('')
+        assignNo = 3
         for assignment in assignments:
             if assignment.pk in gradlist:
                 grade = gradlist[assignment.pk]
@@ -301,11 +306,27 @@ def gradingtable(request, course_id):
                         pass
                 else:
                     columns.append('N/A')
+                if int(str(grade)):
+                    if assignNo >= len(averages):
+                        averages.append(int(str(grade)))
+                    else:
+                        averages[assignNo] = int(averages[assignNo]) + int(str(grade))
             else:
                 columns.append('')
+            if assignNo >= len(averages):
+                averages.append('')
+            assignNo = assignNo + 1
         columns.append("%s / %s" % (numpassed, len(assignments)))
         columns.append("%u" % pointsum)
         resulttable.append(columns)
+    avgsum = 0
+    for i in range(3,len(averages)):
+        if averages[i] != '':
+            averages[i] = str(float("{0:.2f}".format(float(averages[i]) / len(gradings))))
+            avgsum = avgsum + float(averages[i])
+    averages.append('-')
+    averages.append(str(avgsum))
+    resulttable.append(averages)
     return render(request, 'gradingtable.html', {'course': course, 'assignments': assignments, 'resulttable': sorted(resulttable)})
 
 def _replace_placeholders(text, user, course):
