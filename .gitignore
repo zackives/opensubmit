@@ -1,4 +1,5 @@
 syntax: glob
+py2env
 *.pyc
 media
 bin
@@ -11,8 +12,10 @@ lib
 *.sublime-*
 executor.cfg
 *.orig
+*.tar.gz
 web/database.sqlite
 .coverage
 web/opensubmit/settings_dev.ini
 .vagrant
 *.egg-info
+*static-production*

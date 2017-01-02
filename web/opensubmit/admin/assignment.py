@@ -42,6 +42,15 @@ class AssignmentAdminForm(forms.ModelForm):
                 self.fields['attachment_test_full'].widget.template_with_initial = (
                     '%(initial_text)s: %(clear_template)s<br />%(input_text)s: %(input)s'
                 )
+            if self.instance.test_support_files_url():
+                self.fields['attachment_test_support'].widget.template_with_initial = (
+                    '%(initial_text)s: <a href="'+self.instance.test_support_files_url()+'">%(initial)s</a> '
+                    '%(clear_template)s<br />%(input_text)s: %(input)s'
+                )
+            else:
+                self.fields['attachment_test_support'].widget.template_with_initial = (
+                    '%(initial_text)s: %(clear_template)s<br />%(input_text)s: %(input)s'
+                )
 
     def clean(self):
         '''
@@ -112,9 +121,8 @@ class AssignmentAdmin(ModelAdmin):
     change_list_template = "admin/change_list_filter_sidebar.html"
 
     class Media:
-        css = {'all': ('css/admin.css',)}
-
-
+        css = {'all': ('css/teacher.css',)}
+        js = ('js/opensubmit.js',)
 
     form = AssignmentAdminForm
 
@@ -126,7 +134,9 @@ class AssignmentAdmin(ModelAdmin):
             ('File Upload Validation',
                 {   'fields': ('attachment_test_compile',  \
                                ('attachment_test_validity', 'validity_script_download'), \
-                               'attachment_test_full', ('test_machines', 'attachment_test_timeout') )},
+                               'attachment_test_full', \
+                               'attachment_test_support', \
+                               ('test_machines', 'attachment_test_timeout') )},
             )
     )
 

@@ -171,9 +171,14 @@ def new(request, ass_id):
 def update(request, subm_id):
     # Submission should only be editable by their creators
     submission = get_object_or_404(Submission, pk=subm_id)
-    # Somebody may bypass the template check by sending direct POST form data
+    # Somebody may bypass the template check by sending direct POST form data.
+    # This check also fails when the student performs a simple reload on the /update page
+    # without form submission after the deadline.
+    # In practice, the latter happens all the time, so we skip the Exception raising here,
+    # which lead to endless mails for the admin user in the past.
     if not submission.can_reupload():
-        raise SuspiciousOperation("Update of submission %s is not allowed at this time." % str(subm_id))
+        return redirect('dashboard')
+        #raise SuspiciousOperation("Update of submission %s is not allowed at this time." % str(subm_id))
     if request.user not in submission.authors.all():
         return redirect('dashboard')
     if request.POST:
@@ -294,7 +299,7 @@ def gradingtable(request, course_id):
                     if passed:
                         numpassed += 1
                     try:
-                        pointsum += int(str(grade))
+                        pointsum += eval(str(grade))
                     except:
                         pass
                 else:
@@ -398,7 +403,8 @@ def coursearchive(request, course_id):
                 for subdir, files in allfiles:
                     for f in files:
                         zip_relative_dir = subdir.replace(tempdir, "")
-                        z.write(subdir + "/" + f, submdir + 'student_files/%s/%s'%(zip_relative_dir, f), zipfile.ZIP_DEFLATED)
+                        zip_relative_file = '%s/%s'%(zip_relative_dir.decode('utf-8', 'replace'), f.decode('utf-8', 'replace'))
+                        z.write(subdir + "/" + f, submdir + 'student_files/%s'%zip_relative_file, zipfile.ZIP_DEFLATED)
             # add text file with additional information
             info = sub.info_file()
             z.write(info.name, submdir + "info.txt")
@@ -436,7 +442,8 @@ def assarchive(request, ass_id):
             for subdir, files in allfiles:
                 for f in files:
                     zip_relative_dir = subdir.replace(tempdir, "")
-                    z.write(subdir + "/" + f, submdir + 'student_files/%s/%s'%(zip_relative_dir, f), zipfile.ZIP_DEFLATED)
+                    zip_relative_file = '%s/%s'%(zip_relative_dir.decode('utf-8', 'replace'), f.decode('utf-8', 'replace'))
+                    z.write(subdir + "/" + f, submdir + 'student_files/%s'%zip_relative_file, zipfile.ZIP_DEFLATED)
 
         # add text file with additional information
         info = sub.info_file()

@@ -15,6 +15,8 @@ from django.utils import timezone
 from django.test import TransactionTestCase, LiveServerTestCase
 from django.test.utils import override_settings
 from django.test.client import Client
+from django.core.files import File as DjangoFile
+
 
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.auth.models import User
@@ -24,8 +26,6 @@ from opensubmit.tests import TEST_HOST
 from opensubmit.models import Course, Assignment, Submission, SubmissionFile, SubmissionTestResult
 from opensubmit.models import Grading, GradingScheme, TestMachine
 from opensubmit.models import UserProfile
-
-logger = logging.getLogger('OpenSubmit')
 
 rootdir=os.getcwd()
 
@@ -81,16 +81,16 @@ class SubmitTestCase(LiveServerTestCase):
 
     def setUp(self):
         super(SubmitTestCase, self).setUp()
+        # How much do you want to see from the OpenSubmit web code
         self.logger = logging.getLogger('OpenSubmit')
-        self.loggerLevelOld = self.logger.level
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.ERROR)
+        # How much do you want to see from the OpenSubmit executor
+        self.logger = logging.getLogger('OpenSubmitExecutor')
+        self.logger.setLevel(logging.ERROR)
         self.setUpUsers()
         self.setUpCourses()
         self.setUpGradings()
         self.setUpAssignments()
-
-    def tearDown(self):
-        self.logger.setLevel(self.loggerLevelOld)
 
     def createUser(self, user_dict):
         args = dict(user_dict)
@@ -221,8 +221,6 @@ class SubmitTestCase(LiveServerTestCase):
         self.passFailGrading.save()
 
     def setUpAssignments(self):
-        from django.core.files import File as DjangoFile
-
         today = timezone.now()
         last_week = today - datetime.timedelta(weeks=1)
         yesterday = today - datetime.timedelta(days=1)
@@ -286,6 +284,38 @@ class SubmitTestCase(LiveServerTestCase):
         self.validatedAssignment.save()
         self.allAssignments.append(self.validatedAssignment)
 
+        self.singleFileValidatorAssignment = Assignment(
+            title='Validated assignment with single file validator',
+            course=self.course,
+            download='http://example.org/assignments/1/download',
+            gradingScheme=self.passFailGrading,
+            publish_at=last_week,
+            soft_deadline=tomorrow,
+            hard_deadline=next_week,
+            has_attachment=True,
+            validity_script_download=True,
+            attachment_test_validity=DjangoFile(open(rootdir+'/opensubmit/tests/validators/validator.py')),
+            attachment_test_full=DjangoFile(open(rootdir+'/opensubmit/tests/validators/validator.py'))
+        )
+        self.singleFileValidatorAssignment.save()
+        self.allAssignments.append(self.singleFileValidatorAssignment)
+
+        self.validatedWithSupportFilesAssignment = Assignment(
+            title='Validated assignment with support files',
+            course=self.course,
+            download='http://example.org/assignments/1/download',
+            gradingScheme=self.passFailGrading,
+            publish_at=last_week,
+            soft_deadline=tomorrow,
+            hard_deadline=next_week,
+            has_attachment=True,
+            validity_script_download=True,
+            attachment_test_validity=DjangoFile(open(rootdir+'/opensubmit/tests/validators/working.zip')),
+            attachment_test_full=DjangoFile(open(rootdir+'/opensubmit/tests/validators/working.zip')),
+            attachment_test_support=DjangoFile(open(rootdir+'/opensubmit/tests/validators/supportfiles.zip'))
+        )
+        self.validatedWithSupportFilesAssignment.save()
+        self.allAssignments.append(self.validatedWithSupportFilesAssignment)
 
         self.softDeadlinePassedAssignment = Assignment(
             title='Soft deadline passed assignment',
@@ -340,12 +370,26 @@ class SubmitTestCase(LiveServerTestCase):
         return self.machine
 
     def createSubmissionFile(self, relpath="/opensubmit/tests/submfiles/working_withsubdir.zip"):
-        from django.core.files import File as DjangoFile
         fname=relpath[relpath.rfind(os.sep)+1:]
         shutil.copyfile(rootdir+relpath, settings.MEDIA_ROOT+fname)
         sf = SubmissionFile(attachment=DjangoFile(open(rootdir+relpath), unicode(fname)))
         sf.save()
         return sf
+
+    def createCompileBrokenSubmissionFile(self, relpath="/opensubmit/tests/submfiles/reverse_submission.zip"):
+        fname=relpath[relpath.rfind(os.sep)+1:]
+        shutil.copyfile(rootdir+relpath, settings.MEDIA_ROOT+fname)
+        sf = SubmissionFile(attachment=DjangoFile(open(rootdir+relpath), unicode(fname)))
+        sf.save()
+        return sf
+
+    def createNoArchiveSubmissionFile(self, relpath="/opensubmit/tests/submfiles/noarchive.txt"):
+        fname=relpath[relpath.rfind(os.sep)+1:]
+        shutil.copyfile(rootdir+relpath, settings.MEDIA_ROOT+fname)
+        sf = SubmissionFile(attachment=DjangoFile(open(rootdir+relpath), unicode(fname)))
+        sf.save()
+        return sf
+
 
     def createTestedSubmissionFile(self, test_machine):
         '''
@@ -382,6 +426,73 @@ class SubmitTestCase(LiveServerTestCase):
             submitter=user.user,
             notes="This is a validatable submission.",
             state=Submission.TEST_COMPILE_PENDING,
+            file_upload=sf
+        )
+        sub.save()
+        return sub
+
+    def createCompileBrokenSubmission(self, user):
+        '''
+            Create a submission that cannot be compiled.
+        '''
+        sf = self.createCompileBrokenSubmissionFile()
+        sub = Submission(
+            assignment=self.validatedAssignment,
+            submitter=user.user,
+            notes="This is a non-compilable submission.",
+            state=Submission.TEST_COMPILE_PENDING,
+            file_upload=sf
+        )
+        sub.assignment.attachment_test_support=DjangoFile(open(rootdir+'/opensubmit/tests/submfiles/reverse_support_files.zip'))
+        sub.assignment.save()
+        sub.save()
+        return sub
+
+
+    def createSingleFileValidatorSubmission(self, user):
+        '''
+            Create a submission that can be validated by executor,
+            where the validator is a single file and not an archive.
+        '''
+        sf = self.createSubmissionFile()
+        sub = Submission(
+            assignment=self.singleFileValidatorAssignment,
+            submitter=user.user,
+            notes="This is a validatable submission.",
+            state=Submission.TEST_COMPILE_PENDING,
+            file_upload=sf
+        )
+        sub.save()
+        return sub
+
+    def createValidatableWithSupportFilesSubmission(self, user):
+        '''
+            Create a submission that can be validated by executor,
+            which as support files in the assignment.
+        '''
+        sf = self.createSubmissionFile()
+        sub = Submission(
+            assignment=self.validatedWithSupportFilesAssignment,
+            submitter=user.user,
+            notes="This is a validatable submission for an assignment with support files.",
+            state=Submission.TEST_COMPILE_PENDING,
+            file_upload=sf
+        )
+        sub.save()
+        return sub
+
+    def createValidatableNoArchiveSubmission(self, user):
+        '''
+            Create a submission that can be validated by executor.
+            It is not an archive and cant be compiled. This tests special
+            executor cases, e.g. PDF report submission.
+        '''
+        sf = self.createNoArchiveSubmissionFile()
+        sub = Submission(
+            assignment=self.validatedAssignment,
+            submitter=user.user,
+            notes="This is a validatable submission with a non-archive.",
+            state=Submission.TEST_VALIDITY_PENDING,
             file_upload=sf
         )
         sub.save()

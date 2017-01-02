@@ -63,8 +63,41 @@ class ExecutorTestCase(StudentTestCase, LiveServerTestCase):
         self.assertEquals(1, len(results))
         self.assertNotEquals(0, len(results[0].result))
 
+    def testBrokenCompileTest(self):
+        self.sub = self.createCompileBrokenSubmission(self.current_user) 
+        test_machine = self._registerExecutor()
+        self.sub.assignment.test_machines.add(test_machine)
+        self.assertEquals(False, self._runExecutor())
+        results = SubmissionTestResult.objects.filter(
+            submission_file=self.sub.file_upload,
+            kind=SubmissionTestResult.COMPILE_TEST
+        )
+        self.assertEquals(1, len(results))
+        self.assertNotEquals(0, len(results[0].result))
+        self.assertNotEquals(None, self.sub.get_compile_result())
+        # Integrate another test here, which relates to teacher backend submission status rendering
+        # This is bad style - @TODO Refactor tests to make executor runs a helper function for all test classes
+        from opensubmit.admin.submission import SubmissionAdmin
+        sa=SubmissionAdmin(Submission, None)
+        self.assertNotEquals(None, sa.compile_result(self.sub))
+        self.assertEquals("Enabled, no results.", sa.validation_result(self.sub))
+        self.assertEquals("Enabled, no results.", sa.fulltest_result(self.sub))
+
+    def testCompileWithSupportFilesTest(self):
+        self.sub = self.createValidatableWithSupportFilesSubmission(self.current_user)
+        test_machine = self._registerExecutor()
+        self.sub.assignment.test_machines.add(test_machine)
+        self.assertEquals(True, self._runExecutor())
+        results = SubmissionTestResult.objects.filter(
+            submission_file=self.sub.file_upload,
+            kind=SubmissionTestResult.COMPILE_TEST
+        )
+        self.assertEquals(1, len(results))
+        self.assertNotEquals(0, len(results[0].result))
+
+
     def testParallelExecutorsCompileTest(self):
-        self.sub = self.createValidatableSubmission(self.current_user) 
+        self.sub = self.createValidatableSubmission(self.current_user)
         test_machine = self._registerExecutor()
         self.sub.assignment.test_machines.add(test_machine)
 
@@ -160,6 +193,54 @@ class ExecutorTestCase(StudentTestCase, LiveServerTestCase):
         )
         self.assertEquals(1, len(results))
         self.assertNotEquals(0, len(results[0].result))
+
+    def testSingleFileValidatorTest(self):
+        # compile
+        self.sub = self.createSingleFileValidatorSubmission(self.current_user)
+        test_machine = self._registerExecutor()
+        self.sub.assignment.test_machines.add(test_machine)
+        self.assertEquals(True, self._runExecutor())
+        # validate
+        self.assertEquals(True, self._runExecutor())
+        results = SubmissionTestResult.objects.filter(
+            submission_file=self.sub.file_upload,
+            kind=SubmissionTestResult.VALIDITY_TEST
+        )
+        self.assertEquals(1, len(results))
+        self.assertNotEquals(0, len(results[0].result))
+
+    def testValidationWithSupportFilesTest(self):
+        # compile
+        self.sub = self.createValidatableWithSupportFilesSubmission(self.current_user)
+        test_machine = self._registerExecutor()
+        self.sub.assignment.test_machines.add(test_machine)
+        self.assertEquals(True, self._runExecutor())
+        # validate
+        self.assertEquals(True, self._runExecutor())
+        results = SubmissionTestResult.objects.filter(
+            submission_file=self.sub.file_upload,
+            kind=SubmissionTestResult.VALIDITY_TEST
+        )
+        self.assertEquals(1, len(results))
+        self.assertNotEquals(0, len(results[0].result))
+
+    def testValidationTestWithoutCompilation(self):
+        # compile
+        self.sub = self.createValidatableNoArchiveSubmission(self.current_user)
+        self.sub.assignment.attachment_test_compile=False
+        self.sub.assignment.save()
+        test_machine = self._registerExecutor()
+        self.sub.assignment.test_machines.add(test_machine)
+        self.assertEquals(True, self._runExecutor())
+        # validate
+        self.assertEquals(True, self._runExecutor())
+        results = SubmissionTestResult.objects.filter(
+            submission_file=self.sub.file_upload,
+            kind=SubmissionTestResult.VALIDITY_TEST
+        )
+        self.assertEquals(1, len(results))
+        self.assertNotEquals(0, len(results[0].result))
+
 
     def testFullTest(self):
         # We need a fully working validation run beforehand

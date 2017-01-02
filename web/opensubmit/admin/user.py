@@ -31,7 +31,7 @@ class UserAdmin(DjangoUserAdmin):
             "classes": ("grp-collapse grp-open",),
             "fields": ("username","password","first_name","last_name", "email")
         }),
-        ("Student Details", {
+        ("Details", {
             "classes": ("placeholder profile-group",),
             "fields": ()
         }),
@@ -44,6 +44,9 @@ class UserAdmin(DjangoUserAdmin):
             "fields": ("last_login","date_joined")
         }),
     )
+
+    class Media:
+        css = {'all': ('css/teacher.css',)}
 
     inlines = (UserProfileInline, )
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff',  social)

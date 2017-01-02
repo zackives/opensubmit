@@ -30,7 +30,7 @@ class GradingSchemeAdmin(ModelAdmin):
     list_display = ['__unicode__', gradings, courses]
 
     class Media:
-        css = {'all': ('css/admin.css',)}
+        css = {'all': ('css/teacher.css',)}
 
 
     def formfield_for_dbfield(self, db_field, **kwargs):
