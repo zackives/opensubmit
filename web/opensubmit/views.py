@@ -248,8 +248,8 @@ def perftable(request, ass_id):
     for sub in assignment.submissions.all():
         result = sub.get_fulltest_result()
         if result:
-            row=[unicode(sub.assignment), unicode(sub.pk), ", ".join(sub.authors.values_list('username', flat=True).order_by('username')), result.perf_data]
-            row=[s.encode('utf-8') for s in row]
+            row = [unicode(sub.assignment), unicode(sub.pk), ", ".join(sub.authors.values_list('username', flat=True).order_by('username')), result.perf_data]
+            row = [s.encode('utf-8') for s in row]
             writer.writerow(row)
     return response
 
@@ -306,11 +306,14 @@ def gradingtable(request, course_id):
                         pass
                 else:
                     columns.append('N/A')
-                if int(str(grade)):
-                    if assignNo >= len(averages):
-                        averages.append(int(str(grade)))
-                    else:
-                        averages[assignNo] = int(averages[assignNo]) + int(str(grade))
+                try:
+                    if int(str(grade)) >= 0:
+                        if assignNo >= len(averages):
+                            averages.append(int(str(grade)))
+                        else:
+                            averages[assignNo] = int(averages[assignNo]) + int(str(grade))
+                except ValueError as ve:
+                    print ve
             else:
                 columns.append('')
             if assignNo >= len(averages):
@@ -405,8 +408,8 @@ def coursearchive(request, course_id):
                 for subdir, files in allfiles:
                     for f in files:
                         zip_relative_dir = subdir.replace(tempdir, "")
-                        zip_relative_file = '%s/%s'%(zip_relative_dir.decode('utf-8', 'replace'), f.decode('utf-8', 'replace'))
-                        z.write(subdir + "/" + f, submdir + 'student_files/%s'%zip_relative_file, zipfile.ZIP_DEFLATED)
+                        zip_relative_file = '%s/%s' % (zip_relative_dir.decode('utf-8', 'replace'), f.decode('utf-8', 'replace'))
+                        z.write(subdir + "/" + f, submdir + 'student_files/%s' % zip_relative_file, zipfile.ZIP_DEFLATED)
             # add text file with additional information
             info = sub.info_file()
             z.write(info.name, submdir + "info.txt")
@@ -444,8 +447,8 @@ def assarchive(request, ass_id):
             for subdir, files in allfiles:
                 for f in files:
                     zip_relative_dir = subdir.replace(tempdir, "")
-                    zip_relative_file = '%s/%s'%(zip_relative_dir.decode('utf-8', 'replace'), f.decode('utf-8', 'replace'))
-                    z.write(subdir + "/" + f, submdir + 'student_files/%s'%zip_relative_file, zipfile.ZIP_DEFLATED)
+                    zip_relative_file = '%s/%s' % (zip_relative_dir.decode('utf-8', 'replace'), f.decode('utf-8', 'replace'))
+                    z.write(subdir + "/" + f, submdir + 'student_files/%s' % zip_relative_file, zipfile.ZIP_DEFLATED)
 
         # add text file with additional information
         info = sub.info_file()
@@ -462,8 +465,8 @@ def assarchive(request, ass_id):
 def machine(request, machine_id):
     machine = get_object_or_404(TestMachine, pk=machine_id)
     try:
-        json_data=json.loads(machine.config)
-        config={k: v for k, v in json_data.items() if v}
+        json_data = json.loads(machine.config)
+        config = {k: v for k, v in json_data.items() if v}
     except:
         config = {}
     queue = Submission.pending_student_tests.all()

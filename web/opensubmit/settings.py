@@ -139,7 +139,7 @@ if is_production:
     # Absolute URL for static files, directly served by Apache on production systems
     STATIC_URL = ensure_slash(False, True, MAIN_URL + '/static/')
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    ALLOWED_HOSTS = [MAIN_URL.split('/')[2]]
+    ALLOWED_HOSTS = [MAIN_URL.split('/')[2],u'ip-172-31-44-4.ec2.internal']
     if ':' in ALLOWED_HOSTS[0]:
         ALLOWED_HOSTS = [ALLOWED_HOSTS[0].split(':')[0]]
     SERVER_EMAIL = config.get('admin', 'ADMIN_EMAIL')
@@ -336,5 +336,11 @@ GRAPPELLI_INDEX_DASHBOARD = {
     'opensubmit.admin.teacher_backend': 'opensubmit.dashboard.TeacherDashboard',
     'opensubmit.admin.admin_backend': 'opensubmit.dashboard.AdminDashboard',
 }
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'upenn.cis555'
+EMAIL_HOST_PASSWORD = '16pennapps!'
 
 assert(not config.has_section('overrides'))     # factored out

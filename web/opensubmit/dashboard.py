@@ -58,6 +58,7 @@ class TeacherDashboard(Dashboard):
                 ]
             ))
 
+
 class AdminDashboard(Dashboard):
 
     class Media:
