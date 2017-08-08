@@ -14,3 +14,4 @@ class GradingAdmin(ModelAdmin):
 
     class Media:
         css = {'all': ('css/teacher.css',)}
+
